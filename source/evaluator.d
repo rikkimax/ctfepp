@@ -29,7 +29,7 @@ pure void executeEvaulator(ref EvaluateData data) {
 				
 				foreach(k, v; data.defineValues) {
 					if (ret.indexOf(" " ~ k ~ " ") >= 0) {
-						ret = ret.replace(k, v);
+						ret = ret.replace(" " ~ k ~ " ", " " ~ v ~ " ");
 					} else if (ret.length >= k.length && ret[$ - k.length .. $] == k) {
 						ret = ret[0 .. $ - k.length] ~ v;
 					} else if (ret.length >= k.length && ret[0 .. k.length] == k) {
