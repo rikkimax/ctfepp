@@ -1,0 +1,9 @@
+{
+	"name": "ctfepp",
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2014, rikki",
+	"authors": ["rikki"],
+	"dependencies": {
+	},
+	"targetType": "executable"
+}
