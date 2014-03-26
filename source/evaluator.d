@@ -42,21 +42,32 @@ pure void executeEvaulator(ref EvaluateData data) {
 			
 			bool conditionCheck(string conditions) {
 				string[] conditionals = conditions.split(["&&", "||"]);
+				// orConditions[] = 
 				
-				foreach(condition; conditionals) {
+				bool ret;
+				
+				foreach(i, condition; conditionals) {
 					string[] lineA = condition.split(" ");
 					if (lineA.length == 2) {
 						if (lineA[0] == "defined") {
 							string value = lineA[1].replace("(", "").replace(")", "");
 							
-							if (value in data.defineValues) {
-								return true;
-							}
+							// if or'd
+							ret = (value in data.defineValues) !is null;
+							// else
+							//ret = ret && value in data.defineValues;
+						} else if (lineA[0] == "!defined") {
+							string value = lineA[1].replace("(", "").replace(")", "");
+							
+							// if or'd
+							ret = (value in data.defineValues) is null;
+							// else
+							//ret = ret && value !in data.defineValues;
 						}
 					}
 				}
 				
-				return false;
+				return ret;
 			}
 			
 			switch(line.type) {
@@ -122,6 +133,12 @@ $TEST1 = TEST1
 #else
     $TEST2 undefined
 #endif
+
+#ifndef MYNAME
+    #define MYNAME \"Richard\"
+#endif
+
+Hello MYNAME
 """);
 	
 	executePPParser(file);
@@ -142,6 +159,7 @@ $TEST1 = \"hi1\"
 $TEST2 defined
 $TEST2 = \"hi2\"
 $TEST2 undefined
+Hello \"Richard\"
 """);
 }
 

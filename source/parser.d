@@ -64,6 +64,13 @@ L1: foreach(line; data.text.splitLines()) {
 				addLine(cline);
 				currentConditionalBlock = cline.conditionalBlock;
 				continue;
+			} else if (lineA[0] == "#ifndef") {
+				lineA[0] = "!defined";
+				auto cline = PPLine(PPLineType.ConditionalBlock, line);
+				cline.conditionalBlock = new PPConditionalBlock(currentConditionalBlock, lineA.join(" ").removeCommentedSections);
+				addLine(cline);
+				currentConditionalBlock = cline.conditionalBlock;
+				continue;
 			} else if (lineA[0] == "#undef") {
 				auto cline = PPLine(PPLineType.Undefine, line);
 				cline.defineName = lineA[1];
