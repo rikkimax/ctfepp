@@ -1,6 +1,6 @@
 ﻿module evaluator;
 import defs;
-import std.string : indexOf, toLower;
+import std.string : indexOf, toLower, strip;
 
 /**
  * 
@@ -41,28 +41,53 @@ pure void executeEvaulator(ref EvaluateData data) {
 			}
 			
 			bool conditionCheck(string conditions) {
-				string[] conditionals = conditions.split(["&&", "||"]);
-				// orConditions[] = 
+				string[] conditionals = conditions.split("&&", "||");
+				bool[] orConditions;
 				
-				bool ret;
+				orConditions ~= true;
+				
+				foreach(c; conditions.splitDelimaters("&&", "||")) {
+					orConditions ~= c == "||";
+				}
+				
+				bool ret = false;
+				bool changed = false;
 				
 				foreach(i, condition; conditionals) {
+					condition = condition.strip();
+					
 					string[] lineA = condition.split(" ");
 					if (lineA.length == 2) {
 						if (lineA[0] == "defined") {
 							string value = lineA[1].replace("(", "").replace(")", "");
 							
-							// if or'd
-							ret = (value in data.defineValues) !is null;
-							// else
-							//ret = ret && value in data.defineValues;
+							if (!changed) {
+								ret = (value in data.defineValues) !is null;
+								changed = true;
+							} else {
+								// if or'd
+								if (orConditions[i]) {
+									ret = (value in data.defineValues) !is null || ret;
+								} else {
+									// if and'd
+									ret = (value in data.defineValues) !is null && ret;
+								}
+							}
 						} else if (lineA[0] == "!defined") {
 							string value = lineA[1].replace("(", "").replace(")", "");
 							
-							// if or'd
-							ret = (value in data.defineValues) is null;
-							// else
-							//ret = ret && value !in data.defineValues;
+							if (!changed) {
+								ret = (value in data.defineValues) is null;
+								changed = true;
+							} else {
+								// if or'd
+								if (orConditions[i]) {
+									ret = (value in data.defineValues) is null || ret;
+								} else {
+									// if and'd
+									ret = (value in data.defineValues) is null && ret;
+								}
+							}
 						}
 					}
 				}
@@ -83,6 +108,16 @@ pure void executeEvaulator(ref EvaluateData data) {
 						handleLines(line.conditionalBlock.lines);
 					} else {
 						hasBeenHandledConditional ~= false;
+					}
+					break;
+				case PPLineType.ConditionalElseBlock:
+					if (hasBeenHandledConditional.length > 0) {
+						if (!hasBeenHandledConditional[$-1]) {
+							if (conditionCheck(line.conditionalBlock.conditional)) {
+								hasBeenHandledConditional[$-1] = true;
+								handleLines(line.conditionalBlock.lines);
+							}
+						}
 					}
 					break;
 				case PPLineType.ElseConditionBlock:
@@ -145,10 +180,6 @@ Hello MYNAME
 	EvaluateData edata = EvaluateData(file);
 	executeEvaulator(edata);
 	
-	import std.stdio;
-	writeln(file.toString());
-	writeln(edata.output);
-	
 	assert("TEST1" in edata.defineValues);
 	assert(edata.defineValues["TEST1"] == "\"hi1\"");
 	
@@ -160,6 +191,41 @@ $TEST2 defined
 $TEST2 = \"hi2\"
 $TEST2 undefined
 Hello \"Richard\"
+""");
+}
+
+unittest {
+	import parser;
+	
+	PPFile file = PPFile("""
+#define DEF1
+#define DEF2
+
+#if defined DEF1 && defined DEF2
+    YAY
+#else
+    BOO1
+#endif
+
+#undef DEF2
+
+#if defined DEF1 && defined DEF2
+    BOO1
+#elif defined DEF1
+    YAY
+#elif defined DEF2
+    BOO2
+#else
+    BOO3
+#endif
+""");
+	
+	executePPParser(file);
+	EvaluateData edata = EvaluateData(file);
+	executeEvaulator(edata);
+	
+	assert(edata.output == """YAY
+YAY
 """);
 }
 
@@ -182,6 +248,22 @@ private {
 		assert(test.split("|") == ["abcd", "efgh", "ijkl"]);
 		string test2 = "abcd||efgh||ijkl";
 		assert(test2.split("||") == ["abcd", "efgh", "ijkl"]);
+	}
+	
+	pure string[] splitDelimaters(string text, string[] delimaters...) {
+		string[] ret;
+		ptrdiff_t i;
+		while((i = min(text.indexOfs(delimaters))) >= 0) {
+			ret ~= text[i .. i + lengthOfIndex(text, i, delimaters)];
+			text = text[i + lengthOfIndex(text, i, delimaters) .. $];
+		}
+		return ret;
+	}
+	
+	unittest {
+		assert(splitDelimaters("abc|def|ghi", "|") == ["|", "|"]);
+		assert(splitDelimaters("abc/def|ghi", "|", "/") == ["/", "|"]);
+		assert(splitDelimaters("a && b || c", "&&", "||") == ["&&", "||"]);
 	}
 	
 	pure string[] notEmptyElements(string[] elements) {

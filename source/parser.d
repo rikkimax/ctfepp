@@ -52,8 +52,25 @@ L1: foreach(line; data.text.splitLines()) {
 				continue;
 			} else if (lineA[0] == "#elif") {
 				removeFirstLineA();
+				
 				auto cline = PPLine(PPLineType.ConditionalElseBlock, line);
-				cline.conditionalBlock = new PPConditionalBlock(currentConditionalBlock !is null ? currentConditionalBlock.preConditionalBlock : null, lineA.join(" ").removeCommentedSections);
+				
+				if (currentConditionalBlock !is null) {
+					currentConditionalBlock = currentConditionalBlock.preConditionalBlock;
+				} else {
+					currentConditionalBlock = null;
+				}
+				
+				if (currentConditionalBlock !is null) {
+					if (currentConditionalBlock.preConditionalBlock !is null) {
+						cline.conditionalBlock = new PPConditionalBlock(currentConditionalBlock.preConditionalBlock, lineA.join(" ").removeCommentedSections);
+					} else {
+						cline.conditionalBlock = new PPConditionalBlock(null, lineA.join(" ").removeCommentedSections);
+					}
+				} else {
+					cline.conditionalBlock = new PPConditionalBlock(null, lineA.join(" ").removeCommentedSections);
+				}
+				
 				addLine(cline);
 				currentConditionalBlock = cline.conditionalBlock;
 				continue;
@@ -80,7 +97,7 @@ L1: foreach(line; data.text.splitLines()) {
 			}
 		}
 		
-		if (lineA.length > 2) {
+		if (lineA.length >= 2) {
 			if (lineA[0] == "#define") {
 				removeFirstLineA();
 				if (lineA[0].indexOf("(") > 0 && lineA[0][$-1] == ')') {
