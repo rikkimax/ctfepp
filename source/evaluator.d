@@ -218,6 +218,12 @@ unittest {
 #else
     BOO3
 #endif
+
+#if defined DEF1 || defined DEF2
+    YAY
+#else
+    BOO
+#endif
 """);
 	
 	executePPParser(file);
@@ -225,6 +231,7 @@ unittest {
 	executeEvaulator(edata);
 	
 	assert(edata.output == """YAY
+YAY
 YAY
 """);
 }
