@@ -144,8 +144,14 @@ pure void executeEvaulator(ref EvaluateData data) {
 
 unittest {
 	import parser;
+	PPFile file;
+	EvaluateData edata;
 	
-	PPFile file = PPFile("""
+	
+	// test 1
+	
+	
+	file = PPFile("""
 #define TEST1 \"hi1\"
 
 sometext
@@ -177,7 +183,7 @@ Hello MYNAME
 """);
 	
 	executePPParser(file);
-	EvaluateData edata = EvaluateData(file);
+	edata = EvaluateData(file);
 	executeEvaulator(edata);
 	
 	assert("TEST1" in edata.defineValues);
@@ -192,12 +198,12 @@ $TEST2 = \"hi2\"
 $TEST2 undefined
 Hello \"Richard\"
 """);
-}
-
-unittest {
-	import parser;
 	
-	PPFile file = PPFile("""
+	
+	// test2
+	
+	
+	file = PPFile("""
 #define DEF1
 #define DEF2
 
@@ -227,7 +233,7 @@ unittest {
 """);
 	
 	executePPParser(file);
-	EvaluateData edata = EvaluateData(file);
+	edata = EvaluateData(file);
 	executeEvaulator(edata);
 	
 	assert(edata.output == """YAY
