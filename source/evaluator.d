@@ -73,6 +73,8 @@ pure void executeEvaulator(ref EvaluateData data) {
 									ret = (value in data.defineValues) !is null && ret;
 								}
 							}
+							
+							continue;
 						} else if (lineA[0] == "!defined") {
 							string value = lineA[1].replace("(", "").replace(")", "");
 							
@@ -88,7 +90,23 @@ pure void executeEvaulator(ref EvaluateData data) {
 									ret = (value in data.defineValues) is null && ret;
 								}
 							}
+							
+							continue;
 						}
+					}
+					
+					if (lineA.length >= 2) {
+						size_t[string] valueOps = ["==" : 1, "!=" : 2, ">" : 3, "<" : 4, ">=" : 5, "<=" : 6];
+						string[] values = conditions.split(valueOps.keys);
+						size_t[] valueOpChecks;
+						
+						valueOpChecks ~= 0;
+						
+						foreach(c; conditions.splitDelimaters(valueOps.keys)) {
+							valueOpChecks ~= valueOps.get(c, 0);
+						}
+						
+						
 					}
 				}
 				
@@ -238,6 +256,34 @@ Hello \"Richard\"
 	
 	assert(edata.output == """YAY
 YAY
+YAY
+""");
+	
+	// test 3
+	
+	file = PPFile("""
+#if 1 == 1
+    YAY
+#else
+    BOO
+#endif
+
+#if 1 + 1 == 2
+    YAY
+#else
+    BOO
+#endif
+""");
+	
+	executePPParser(file);
+	edata = EvaluateData(file);
+	executeEvaulator(edata);
+	
+	import std.stdio;
+	writeln(file.toString());
+	writeln(edata.output);
+	
+	assert(edata.output == """YAY
 YAY
 """);
 }
