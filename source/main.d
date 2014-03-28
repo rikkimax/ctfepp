@@ -1,6 +1,7 @@
 ﻿module main;
 import defs;
 import parser;
+import evaluator;
 import std.stdio;
 
 void main() {
@@ -24,4 +25,24 @@ something
 """);
 	executePPParser(file);
 	writeln(file.toString());
+	
+	
+	mixin(testMixin());
+}
+
+
+pure string testMixin() {
+	PPFile file;
+	EvaluateData edata;
+	
+	file = PPFile("""
+#define TEXT \"Hello to you!\"
+writeln( TEXT );
+""");
+	
+	executePPParser(file);
+	edata = EvaluateData(file);
+	executeEvaulator(edata);
+	
+	return edata.output;
 }
