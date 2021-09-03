@@ -1,12 +1,10 @@
-﻿module main;
-import defs;
-import parser;
-import evaluator;
+module main;
+import ctfepp;
 import std.stdio;
 
 void main() {
-	PPFile file = PPFile("""
-#include \"test.h\"
+	PPFile file = PPFile(`
+#include "test.h"
 #include <test2.h>
 something
 #if 1 + 1 == 2
@@ -22,27 +20,26 @@ something
 #define PI 3.14159
 #undef PI
 #define RADTODEG(x) ((x) * 57.29578)
-""");
+`);
 	executePPParser(file);
 	writeln(file.toString());
-	
-	
+
+
 	mixin(testMixin());
 }
 
-
-pure string testMixin() {
+string testMixin() {
 	PPFile file;
 	EvaluateData edata;
 	
-	file = PPFile("""
-#define TEXT \"Hello to you!\"
+	file = PPFile(`
+#define TEXT "Hello to you!"
 writeln( TEXT );
-""");
-	
+`);
+
 	executePPParser(file);
 	edata = EvaluateData(file);
 	executeEvaulator(edata);
-	
+
 	return edata.output;
 }
