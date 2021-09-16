@@ -129,11 +129,11 @@ pure string getIndent(size_t size) nothrow {
 	return ret;
 }
 
-package @safe:
+package @safe pure:
 
 import std.string : indexOf, toLower;
 
-pure string[] split(string text, string[] delimaters...) {
+string[] split(string text, string[] delimaters...) {
 	string[] ret;
 	ptrdiff_t i;
 	while((i = min(text.indexOfs(delimaters))) >= 0) {
@@ -152,7 +152,7 @@ unittest {
 	assert(test2.split("||") == ["abcd", "efgh", "ijkl"]);
 }
 
-pure string[] splitDelimaters(string text, string[] delimaters...) {
+string[] splitDelimaters(string text, string[] delimaters...) {
 	string[] ret;
 	ptrdiff_t i;
 	while((i = min(text.indexOfs(delimaters))) >= 0) {
@@ -168,7 +168,7 @@ unittest {
 	assert(splitDelimaters("a && b || c", "&&", "||") == ["&&", "||"]);
 }
 
-pure string[] notEmptyElements(string[] elements) {
+string[] notEmptyElements(string[] elements) {
 	string[] ret;
 
 	foreach(e; elements) {
@@ -179,7 +179,7 @@ pure string[] notEmptyElements(string[] elements) {
 	return ret;
 }
 
-pure string[] notCommentedElements(string[] elements) {
+string[] notCommentedElements(string[] elements) {
 	string[] ret;
 
 	foreach(e; elements) {
@@ -191,7 +191,7 @@ pure string[] notCommentedElements(string[] elements) {
 	return ret;
 }
 
-pure size_t[] indexOfs(string text, string[] delimiters) {
+size_t[] indexOfs(string text, string[] delimiters) {
 	size_t[] ret;
 
 	foreach(delimiter; delimiters)
@@ -200,14 +200,14 @@ pure size_t[] indexOfs(string text, string[] delimiters) {
 	return ret;
 }
 
-pure size_t lengthOfIndex(string text, size_t index, string[] delimiters) {
+size_t lengthOfIndex(string text, size_t index, string[] delimiters) {
 	foreach(delimiter; delimiters) {
 		if (text.indexOf(delimiter) == index) return delimiter.length;
 	}
 	assert(0);
 }
 
-pure size_t min(size_t[] nums...) {
+size_t min(size_t[] nums...) {
 	auto ret = size_t.max;
 
 	foreach(i; nums) {
@@ -218,7 +218,7 @@ pure size_t min(size_t[] nums...) {
 	return ret;
 }
 
-pure string replace(string text, string oldText, string newText, bool caseSensitive = true, bool first = false) {
+string replace(string text, string oldText, string newText, bool caseSensitive = true, bool first = false) {
 	string ret;
 	string tempData;
 	bool stop;

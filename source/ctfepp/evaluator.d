@@ -20,7 +20,7 @@ struct EvaluateData {
 }
 
 /*pure*/ void executeEvaulator(ref EvaluateData data) {
-	bool[] hasBeenHandledConditional;
+	bool[] handledConditional;
 
 	void handleLines(PPLine[] lines) {
 		foreach(line; lines) {
@@ -53,40 +53,20 @@ struct EvaluateData {
 
 					string[] lineA = condition.split(" ");
 					if (lineA.length == 2) {
-						if (lineA[0] == "defined") {
+						if (lineA[0] == "defined" || lineA[0] == "!defined") {
 							string value = lineA[1].replace("(", "").replace(")", "");
-
+							bool cond = ((value in data.defineValues) !is null) ^ (lineA[0][0] == '!');
 							if (!changed) {
-								ret = (value in data.defineValues) !is null;
+								ret = cond;
 								changed = true;
 							} else {
 								// if or'd
-								if (orConditions[i]) {
-									ret = (value in data.defineValues) !is null || ret;
-								} else {
+								if (orConditions[i])
+									ret |= cond;
+								else
 									// if and'd
-									ret = (value in data.defineValues) !is null && ret;
-								}
+									ret &= cond;
 							}
-
-							continue;
-						}
-						if (lineA[0] == "!defined") {
-							string value = lineA[1].replace("(", "").replace(")", "");
-
-							if (!changed) {
-								ret = (value in data.defineValues) is null;
-								changed = true;
-							} else {
-								// if or'd
-								if (orConditions[i]) {
-									ret = (value in data.defineValues) is null || ret;
-								} else {
-									// if and'd
-									ret = (value in data.defineValues) is null && ret;
-								}
-							}
-
 							continue;
 						}
 					}
@@ -101,8 +81,8 @@ struct EvaluateData {
 
 						import expression;
 						size_t index = 0;
-						auto a = compileExpression(values[0]);
-						auto b = compileExpression(values[1]);
+						auto a = Expression!int(values[0]);
+						auto b = Expression!int(values[1]);
 						final switch(valueOpChecks[0])
 						{
 							case 0: break;
@@ -124,31 +104,31 @@ struct EvaluateData {
 					break;
 				case PPLineType.ConditionalBlock:
 					if (conditionCheck(line.conditionalBlock.conditional)) {
-						hasBeenHandledConditional ~= true;
+						handledConditional ~= true;
 						handleLines(line.conditionalBlock.lines);
 					} else
-						hasBeenHandledConditional ~= false;
+						handledConditional ~= false;
 					break;
 				case PPLineType.ConditionalElseBlock:
-					if (hasBeenHandledConditional.length > 0) {
-						if (!hasBeenHandledConditional[$-1]) {
+					if (handledConditional.length > 0) {
+						if (!handledConditional[$-1]) {
 							if (conditionCheck(line.conditionalBlock.conditional)) {
-								hasBeenHandledConditional[$-1] = true;
+								handledConditional[$-1] = true;
 								handleLines(line.conditionalBlock.lines);
 							}
 						}
 					}
 					break;
 				case PPLineType.ElseConditionBlock:
-					if (hasBeenHandledConditional.length > 0) {
-						if (!hasBeenHandledConditional[$-1]) {
+					if (handledConditional.length > 0) {
+						if (!handledConditional[$-1]) {
 							handleLines(line.conditionalBlock.lines);
 						}
 					}
 					break;
 				case PPLineType.EndConditionalBlock:
-					if (hasBeenHandledConditional.length > 0)
-						hasBeenHandledConditional.length--;
+					if (handledConditional.length > 0)
+						handledConditional.length--;
 					break;
 				default:
 					data.output ~= handleValueSubsitutions(line.text) ~ "\n";
