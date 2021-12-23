@@ -1,5 +1,5 @@
 module ctfepp.defs;
-import ctfepp.parser;
+import std.array, ctfepp.parser;
 
 struct PPFile {
 	string text;
@@ -40,72 +40,110 @@ struct PPLine {
 	string[] defineArgs;
 	string defineValue;
 
-	pure string toString(size_t indent = 0) {
-		string ret;
+	string toString(size_t indent = 0) pure {
+		auto app = appender!string;
+		toString(app, indent);
+		return app[];
+	}
+
+	string toString(R)(R ret, size_t indent = 0) pure {
+		size_t cutlen;
 
 		final switch(type) {
 			case PPLineType.ConditionalBlock:
-				ret = getIndent(indent) ~ "Condition: " ~ conditionalBlock.conditional ~ " {\n";
+				ret ~= getIndent(indent);
+				ret ~= "Condition: ";
+				ret ~= conditionalBlock.conditional;
+				ret ~= " {\n";
 
 				foreach(line; conditionalBlock.lines) {
-					ret ~= line.toString(indent + 1) ~ "\n";
+					ret ~= line.toString(indent + 1);
+					ret ~= '\n';
 				}
 
-				ret ~= getIndent(indent) ~ "}\n";
+				ret ~= getIndent(indent);
+				ret ~= "}\n";
 				break;
 			case PPLineType.ConditionalElseBlock:
-				ret = getIndent(indent) ~ "Else condition: " ~ conditionalBlock.conditional ~ " {\n";
+				ret ~= getIndent(indent);
+				ret ~= "Else condition: ";
+				ret ~= conditionalBlock.conditional;
+				ret ~= " {\n";
 
 				foreach(line; conditionalBlock.lines) {
-					ret ~= line.toString(indent + 1) ~ "\n";
+					ret ~= line.toString(indent + 1);
+					ret ~= '\n';
 				}
 
-				ret ~= getIndent(indent) ~ "}\n";
+				ret ~= getIndent(indent);
+				ret ~= "}\n";
 				break;
 			case PPLineType.Include:
-				ret ~= getIndent(indent) ~ "Include: " ~ includeFile ~ "\n";
+				ret ~= getIndent(indent);
+				ret ~= "Include: ";
+				ret ~= includeFile;
+				ret ~= '\n';
 				break;
 			case PPLineType.EndConditionalBlock:
-				ret ~= getIndent(indent) ~ "End condition\n";
+				ret ~= getIndent(indent);
+				ret ~= "End condition\n";
 				break;
 			case PPLineType.ElseConditionBlock:
-				ret ~= getIndent(indent) ~ "Else condition {\n";
+				ret ~= getIndent(indent);
+				ret ~= "Else condition {\n";
 
 				foreach(line; conditionalBlock.lines) {
-					ret ~= line.toString(indent + 1) ~ "\n";
+					ret ~= line.toString(indent + 1);
+					ret ~= '\n';
 				}
 
-				ret ~= getIndent(indent) ~ "}\n";
+				ret ~= getIndent(indent);
+				ret ~= "}\n";
 				break;
 			case PPLineType.DefineFunction:
-				ret = getIndent(indent) ~ "Define function: " ~ defineName ~ "(";
+				ret ~= getIndent(indent);
+				ret ~= "Define function: ";
+				ret ~= defineName;
+				ret ~= '(';
 
 				foreach(arg; defineArgs) {
-					ret ~= arg ~ ",";
+					ret ~= arg;
+					ret ~= ',';
 				}
-				if (ret[$-1] == ',') ret.length--;
+				if (ret[][$-1] == ',') cutlen = 1;
 
 				ret ~= ") {\n";
 
-				ret ~= defineValue ~ "\n";
-				ret ~= getIndent(indent) ~ "}\n";
+				ret ~= defineValue;
+				ret ~= '\n';
+				ret ~= getIndent(indent);
+				ret ~= "}\n";
 				break;
 			case PPLineType.DefineVariable:
-				ret = getIndent(indent) ~ "Define variable: " ~ defineName ~ " {\n";
-				ret ~= defineValue ~ "\n";
-				ret ~= getIndent(indent) ~ "}\n";
+				ret ~= getIndent(indent);
+				ret ~= "Define variable: " ~ defineName;
+				ret ~= " {\n";
+				ret ~= defineValue;
+				ret ~= '\n';
+				ret ~= getIndent(indent);
+				ret ~= "}\n";
 				break;
 			case PPLineType.Undefine:
-				ret ~= getIndent(indent) ~ "Undefine: " ~ defineName ~ "\n";
+				ret ~= getIndent(indent);
+				ret ~= "Undefine: " ~ defineName;
+				ret ~= '\n';
 				break;
 			case PPLineType.Unknown:
-				ret = getIndent(indent) ~ "Unknown: {\n";
-				ret ~= text ~ "\n";
-				ret ~= getIndent(indent) ~ "}\n";
+				ret ~= getIndent(indent);
+				ret ~= "Unknown: {\n";
+				ret ~= text;
+				ret ~= '\n';
+				ret ~= getIndent(indent);
+				ret ~= "}\n";
 				break;
 		}
 
-		return ret;
+		return ret[][0..$-cutlen];
 	}
 }
 
