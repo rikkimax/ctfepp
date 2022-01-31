@@ -1,30 +1,30 @@
-﻿module parser;
-import defs;
-import std.string : splitLines, strip, indexOf, toLower, join;
+module ctfepp.parser;
+import ctfepp.defs;
+import std.string : splitLines, strip, join;
 import std.conv : to;
 
 /**
  * Parses a file to be macro preprocessed.
  * Turns it into a tokenised format.
- * 
+ *
  * TODO:
  * 		- Support multilined defines
  */
 pure void executePPParser(ref PPFile data) {
 	PPConditionalBlock currentConditionalBlock;
-	
+
 L1: foreach(line; data.text.splitLines()) {
 		line = line.strip();
 		string[] lineA = line.split(" ", "\t").notEmptyElements().notCommentedElements();
 		if (lineA.length == 0) continue;
-		
+
 		void removeFirstLineA() {
 			if (lineA.length > 1)
 				lineA = lineA[1 .. $];
 			else
 				lineA = [];
 		}
-		
+
 		void addLine(PPLine line) {
 			if (currentConditionalBlock is null) {
 				data.lines ~= line;
@@ -32,7 +32,7 @@ L1: foreach(line; data.text.splitLines()) {
 				currentConditionalBlock.lines ~= line;
 			}
 		}
-		
+
 		if (lineA[0] == "#include" && lineA.length > 0) {
 			if (lineA.length > 1 &&
 			    (lineA[1][0] == '<' && lineA[1][$-1] == '>') ||
@@ -41,7 +41,7 @@ L1: foreach(line; data.text.splitLines()) {
 				continue;
 			}
 		}
-		
+
 		if (lineA.length > 1) {
 			if (lineA[0] == "#if") {
 				removeFirstLineA();
@@ -52,15 +52,15 @@ L1: foreach(line; data.text.splitLines()) {
 				continue;
 			} else if (lineA[0] == "#elif") {
 				removeFirstLineA();
-				
+
 				auto cline = PPLine(PPLineType.ConditionalElseBlock, line);
-				
+
 				if (currentConditionalBlock !is null) {
 					currentConditionalBlock = currentConditionalBlock.preConditionalBlock;
 				} else {
 					currentConditionalBlock = null;
 				}
-				
+
 				if (currentConditionalBlock !is null) {
 					if (currentConditionalBlock.preConditionalBlock !is null) {
 						cline.conditionalBlock = new PPConditionalBlock(currentConditionalBlock.preConditionalBlock, lineA.join(" ").removeCommentedSections);
@@ -70,7 +70,7 @@ L1: foreach(line; data.text.splitLines()) {
 				} else {
 					cline.conditionalBlock = new PPConditionalBlock(null, lineA.join(" ").removeCommentedSections);
 				}
-				
+
 				addLine(cline);
 				currentConditionalBlock = cline.conditionalBlock;
 				continue;
@@ -91,12 +91,12 @@ L1: foreach(line; data.text.splitLines()) {
 			} else if (lineA[0] == "#undef") {
 				auto cline = PPLine(PPLineType.Undefine, line);
 				cline.defineName = lineA[1];
-				
+
 				addLine(cline);
 				continue;
 			}
 		}
-		
+
 		if (lineA.length >= 2) {
 			if (lineA[0] == "#define") {
 				removeFirstLineA();
@@ -117,16 +117,16 @@ L1: foreach(line; data.text.splitLines()) {
 				continue;
 			}
 		}
-		
+
 		if (lineA[0] == "#else") {
 			auto cline = PPLine(PPLineType.ElseConditionBlock, line);
-			
+
 			if (currentConditionalBlock !is null) {
 				currentConditionalBlock = currentConditionalBlock.preConditionalBlock;
 			} else {
 				currentConditionalBlock = null;
 			}
-			
+
 			if (currentConditionalBlock !is null) {
 				if (currentConditionalBlock.preConditionalBlock !is null) {
 					cline.conditionalBlock = new PPConditionalBlock(currentConditionalBlock.preConditionalBlock, "");
@@ -140,7 +140,7 @@ L1: foreach(line; data.text.splitLines()) {
 			currentConditionalBlock = cline.conditionalBlock;
 			continue;
 		}
-		
+
 		if (lineA[0] == "#endif") {
 			if (currentConditionalBlock !is null) {
 				currentConditionalBlock = currentConditionalBlock.preConditionalBlock;
@@ -150,86 +150,11 @@ L1: foreach(line; data.text.splitLines()) {
 			addLine(PPLine(PPLineType.EndConditionalBlock, line));
 			continue;
 		}
-		
+
 		addLine(PPLine(PPLineType.Unknown, line));
 	}
 }
 
 pure string removeCommentedSections(string text) {
 	return text;
-}
-
-
-private {
-	pure string[] split(string text, string[] delimaters...) {
-		string[] ret;
-		ptrdiff_t i;
-		while((i = min(text.indexOfs(delimaters))) >= 0) {
-			ret ~= text[0 .. i];
-			text = text[i + lengthOfIndex(text, i, delimaters) .. $];
-		}
-		if (text.length > 0) {
-			ret ~= text;	
-		}
-		return ret;
-	}
-	
-	unittest {
-		string test = "abcd|efgh|ijkl";
-		assert(test.split("|") == ["abcd", "efgh", "ijkl"]);
-		string test2 = "abcd||efgh||ijkl";
-		assert(test2.split("||") == ["abcd", "efgh", "ijkl"]);
-	}
-	
-	pure string[] notEmptyElements(string[] elements) {
-		string[] ret;
-		
-		foreach(e; elements) {
-			if (e != "")
-				ret ~= e;
-		}
-		
-		return ret;
-	}
-	
-	pure string[] notCommentedElements(string[] elements) {
-		string[] ret;
-		
-		foreach(e; elements) {
-			if (e.length >= 2 && e[0 .. 2] == "//")
-				return ret;
-			ret ~= e;
-		}
-		
-		return ret;
-	}
-	
-	pure size_t[] indexOfs(string text, string[] delimiters) {
-		size_t[] ret;
-		
-		foreach(delimiter; delimiters) {
-			ret ~= text.indexOf(delimiter);
-		}
-		
-		return ret;
-	}
-	
-	pure size_t lengthOfIndex(string text, size_t index, string[] delimiters) {
-		foreach(delimiter; delimiters) {
-			if (text.indexOf(delimiter) == index) return delimiter.length;
-		}
-		assert(0);
-	}
-	
-	pure size_t min(size_t[] nums...) {
-		size_t ret = size_t.max;
-		
-		foreach(i; nums) {
-			if (i < ret) {
-				ret = i;
-			}
-		}
-		
-		return ret;
-	}
 }

@@ -1,0 +1,20 @@
+{
+	"name": "ctfepp",
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2014, rikki",
+	"authors": ["rikki"],
+	"configurations": [
+		{
+			"name": "executable",
+			"targetType": "executable",
+		},
+		{
+			"name": "library",
+			"targetType": "library",
+			"excludedSourceFiles": [ "source/main.d" ]
+		}
+	],
+	"dependencies": {
+		"expression": "~>1.0.2"
+	},
+}
