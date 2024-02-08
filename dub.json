@@ -6,7 +6,7 @@
 	"configurations": [
 		{
 			"name": "executable",
-			"targetType": "executable",
+			"targetType": "executable"
 		},
 		{
 			"name": "library",
@@ -16,5 +16,5 @@
 	],
 	"dependencies": {
 		"expression": "~>1.0.2"
-	},
+	}
 }
